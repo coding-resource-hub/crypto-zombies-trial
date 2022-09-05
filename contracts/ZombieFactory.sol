@@ -1,6 +1,8 @@
 pragma solidity >=0.5.0 <0.6.0;
 
 contract ZombieFactory {
+    event NewZombie(uint256 zombieId, string name, uint256 dna);
+
     uint256 dnaDigits = 16;
     uint256 dnaModulus = 10**dnaDigits;
 
@@ -11,8 +13,14 @@ contract ZombieFactory {
 
     Zombie[] public zombies;
 
+    mapping(uint256 => address) public zombieToOwner;
+    mapping(address => uint256) ownerZombieCount;
+
     function _createZombie(string memory _name, uint256 _dna) private {
-        zombies.push(Zombie(_name, _dna));
+        uint256 id = zombies.push(Zombie(_name, _dna)) - 1;
+        zombieToOwner[id] = msg.sender;
+        ownerZombieCount[msg.sender]++;
+        emit NewZombie(id, _name, _dna);
     }
 
     function _generateRandomDna(string memory _str)
@@ -24,8 +32,8 @@ contract ZombieFactory {
         return rand % dnaModulus;
     }
 
-    // start here
     function createRandomZombie(string memory _name) public {
+        require(ownerZombieCount[msg.sender] == 0);
         uint256 randDna = _generateRandomDna(_name);
         _createZombie(_name, randDna);
     }
